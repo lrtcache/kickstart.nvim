@@ -22,13 +22,17 @@ return {
     },
     opts = {
       workspaces = {
+        -- {
+        --   name = 'personal',
+        --   path = '~/obsidian/vaults/personal',
+        -- },
+        -- {
+        --   name = 'academics',
+        --   path = '~/obsidian/vaults/academics',
+        -- },
         {
-          name = 'personal',
-          path = '~/vaults/personal',
-        },
-        {
-          name = 'academics',
-          path = '~/vaults/academics',
+          name = 'studies',
+          path = '~/obsidian/vaults/studies',
         },
       },
     },
