@@ -1,5 +1,7 @@
 return {
   'SUSTech-data/neopyter',
+  -- Save-only synchronization below depends on this revision's internal API.
+  commit = 'ede156ea0fbfc7ec0920302f624f7b6c27735cfc',
   lazy = false,
   opts = {
     -- Neovim and JupyterLab run on the SSH host; forward only JupyterLab's port.
@@ -15,19 +17,50 @@ return {
       scroll = { enable = false },
     },
     on_attach = function(buf)
-      local function map(key, command, desc)
+      local function map_command(key, command, desc)
         vim.keymap.set('n', '<leader>r' .. key, '<cmd>Neopyter ' .. command .. '<CR>', {
           buffer = buf,
           desc = desc,
         })
       end
+
+      local function map_cursor_run(key, method, desc, all_cells)
+        vim.keymap.set('n', '<leader>r' .. key, function()
+          require('neopyter.async').run(function()
+            local jupyter = require 'neopyter.jupyter'
+            local notebook = jupyter.jupyterlab and jupyter.jupyterlab:get_notebook(buf)
+            if not notebook or not notebook:safe_sync() then
+              vim.notify('Neopyter is not connected to this notebook', vim.log.levels.ERROR)
+              return
+            end
+
+            -- Execution in JupyterLab is relative to its active cell. Neopyter
+            -- normally updates that cell from CursorMoved only when scrolling is
+            -- enabled, so select it explicitly while keeping the browser still.
+            notebook:parse()
+            local index = notebook:get_cursor_cell_pos()
+            if not all_cells and index == 0 then
+              vim.notify('Cursor is not inside a notebook cell', vim.log.levels.WARN)
+              return
+            end
+
+            notebook:full_sync()
+            notebook:activate()
+            if not all_cells then
+              notebook:activate_cell(index - 1)
+            end
+            notebook[method](notebook)
+          end)
+        end, { buffer = buf, desc = desc })
+      end
+
       -- Buffer-local mappings override Quarto's mappings only in connected notebooks.
-      map('c', 'run current', 'Run current notebook cell')
-      map('a', 'run all', 'Run all notebook cells')
-      map('u', 'run allAbove', 'Run cells above')
-      map('d', 'run allBelow', 'Run current cell and below')
-      map('n', 'execute notebook:run-cell-and-select-next', 'Run cell and select next')
-      map('s', 'sync current', 'Sync current notebook')
+      map_cursor_run('c', 'run_selected_cell', 'Run current notebook cell')
+      map_cursor_run('a', 'run_all', 'Run all notebook cells', true)
+      map_cursor_run('u', 'run_all_above', 'Run cells above')
+      map_cursor_run('d', 'run_all_below', 'Run current cell and below')
+      map_cursor_run('n', 'run_cell_and_select_next', 'Run cell and select next')
+      map_command('s', 'sync current', 'Sync current notebook')
     end,
   },
   config = function(_, opts)
