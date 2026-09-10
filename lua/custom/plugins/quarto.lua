@@ -24,7 +24,22 @@ return {
     config = function()
       require('quarto').setup()
       local quarto = require 'quarto'
-      vim.keymap.set('n', '<leader>qp', quarto.quartoPreview)
+      vim.keymap.set('n', '<leader>rp', quarto.quartoPreview, { desc = '[r]un [p]review' })
+      vim.keymap.set('n', '<leader>rc', function()
+        require('quarto.runner').run_cell()
+      end, { desc = '[r]un [c]urrent cell' })
+      vim.keymap.set('n', '<leader>rl', function()
+        require('quarto.runner').run_line()
+      end, { desc = '[r]un [l]ine' })
+      vim.keymap.set('n', '<leader>ra', function()
+        require('quarto.runner').run_all()
+      end, { desc = '[r]un [a]ll cells' })
+      vim.keymap.set('n', '<leader>ru', function()
+        require('quarto.runner').run_above()
+      end, { desc = '[r]un above([u]p) cells' })
+      vim.keymap.set('n', '<leader>rd', function()
+        require('quarto.runner').run_below()
+      end, { desc = '[r]un below([d]own) cell' })
     end,
   },
 
